@@ -1,0 +1,46 @@
+<html>
+
+<head>
+    <script src="./mid-course-finder.js"></script>
+    <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+    <script src="./download.js"></script>
+</head>
+<style>
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    div {
+        margin-bottom: 12px;
+    }
+    input[type="url"] {
+        width: 350px;
+        height: 25px;
+        font-size: 16px;
+    }
+    h1, h3 {
+        margin-bottom: 5px;
+    }
+    select,
+    option {
+        height: 35px;
+        font-size: 16px;
+    }
+    input[type="button"], input[type="file"] {
+        font-size: 16px;
+    }
+    p {
+        margin-top: 0;
+    }
+</style>
+
+<body>
+<h1>Mid-Course Finder</h1>
+<p>Upload a CSV File with a List of Courses to Search for the Mid-Course Evaluation</p>
+<div><label> </label></div>
+<div>
+<h3>Make sure your CSV file has a 'name' and an 'id' column describing each Courses' name and ID.</h3>
+<div>Choose a CSV file to upload. <input type="file" class="csvInput" /></div>
+<input type="button" class="runTool" value="Run Tool" onclick="setupTool()" /></div>
+<pre class="csvDisplay"><pre>
+</body>
+</html>

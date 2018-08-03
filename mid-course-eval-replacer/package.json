@@ -1,0 +1,19 @@
+{
+  "name": "mid-course-eval-replacer",
+  "version": "1.0.0",
+  "description": "A puppeteer application to replace the mid-course evaluation links in brightspace\"",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./cli.js",
+    "test": "test"
+  },
+  "author": "Seth Childers",
+  "license": "MIT",
+  "dependencies": {
+    "d3-dsv": "^1.0.8",
+    "fs": "0.0.1-security",
+    "logger": "github:byuitechops/logger",
+    "prompt": "^1.0.0",
+    "puppeteer": "^1.6.2"
+  }
+}
