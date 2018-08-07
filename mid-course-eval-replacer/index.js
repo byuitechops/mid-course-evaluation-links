@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const d3 = require('d3-dsv');
 const Logger = require('logger');
-const logger = new Logger('End of Course Evaluation Links Replaced');
+const logger = new Logger('Mid_Course_Evaluations_Report');
 
 async function login(userInput) {
     try {
@@ -41,7 +41,7 @@ async function getCourseLinks(filepath, page, browser) {
     let courses = d3.csvParseRows(content, (row, i) => {
         return {
             courseName: row[0],
-            courseId: row[1], 
+            courseId: row[1],
             evaluationFound: row[3],
             link: row[2],
         }
@@ -60,15 +60,15 @@ async function getCourseLinks(filepath, page, browser) {
             coursesWithEvals.push(course);
         }
     });
-    
+
     // put the courses whose evaluations weren't found
     coursesWithoutEvals.forEach(course => {
         logger.log(`Courses who's evaluations weren't found`, course);
     });
-    openCourses(coursesWithEvals, page, browser);
+    editCourses(coursesWithEvals, page, browser);
 }
 
-async function openCourses(coursesWithEvals, page, browser) {
+async function editCourses(coursesWithEvals, page, browser) {
 
     for (i = 0; i < coursesWithEvals.length; i++) {
         try {
@@ -76,30 +76,36 @@ async function openCourses(coursesWithEvals, page, browser) {
             await page.goto(coursesWithEvals[i].link);
             await page.waitFor('#headerMessage iframe');
 
+            page.once('pageerror', (e) => console.log(e));
+
             // set the new contents of the header
-            const newText = `
-            <p>
-                <span style="font-size: 1.3em;"> 
-                    <strong>First</strong>, complete and submit the 
-                    <a rel="noopener" href="https://surveydirector.qualtrics.com/SD/?Q_SDID=SD_4UcBxNIM7o9L4tD&amp;CN={OrgUnitName}&amp;IE=null&amp;CID={OrgUnitId}&amp;ITID=D2L&amp;ITN=Mid-Course Evaluation" target="_blank"><strong>Mid-Course Evaluation Survey</strong>
-                    </a> (will open in a new window)
-                </span>
-            </p>
-            <p>
-                <span style="font-size: 1.3em;"> 
-                    <strong>Second</strong>, indicate whether or not you provided your feedback by using the link above (so you can receive credit if your course provides points for submitting survey feedback). Then click 'Go To Submit Quiz' to complete this activity.
-                </span>
-            </p>
-            `;
+            const newText = `<p><span style="font-size: 1.3em;" data-mce-style="font-size: 1.3em;"> <strong>First</strong>, complete and submit the <a rel="noopener" href=" https://byui.az1.qualtrics.com/jfe/form/SV_3OhOwOdOWSj0K8d?CN={OrgUnitName}&amp;IE=null&amp;CID={OrgUnitId}&amp;ITID=D2L&amp;ITN=Mid-Semester Instructor Feedback" target="_blank" data-mce-href=" https://byui.az1.qualtrics.com/jfe/form/SV_3OhOwOdOWSj0K8d?CN={OrgUnitName}&amp;IE=null&amp;CID={OrgUnitId}&amp;ITID=D2L&amp;ITN=Mid-Semester Instructor Feedback"><strong>Mid-Semester Instructor Feedback Survey</strong></a> (will open in a new window)</span></p><p><span style="font-size: 1.3em;" data-mce-style="font-size: 1.3em;"> <strong>Second</strong>, indicate whether or not you provided your feedback by using the link above (so you can receive credit if your course provides points for submitting survey feedback). Then click 'Go To Submit Quiz' to complete this activity.</span></p>`;
+
+            // Change the title
+            let newTitle = await page.evaluate(() => {
+                return Promise.resolve(document.querySelector('table[role="presentation"] input').value = 'Mid-Semester Instructor Feedback');
+            });
+
+            // add the new title to the course object for the log
+            coursesWithEvals[i].newTitle = newTitle;
+
+            await page.waitForFunction(() => {
+                // grab the contents from the console.log and ensure they are the same
+                console.log(document.querySelector('table[role="presentation"] input').value)
+                return document.querySelector('table[role="presentation"] input').value === 'Mid-Semester Instructor Feedback';
+            }, { polling: 250 });
 
             // must pass in newText as a parameter, it being in a new environment for this function (i.e. in the DOM)
             await page.evaluate((newText) => {
-                return document.querySelector('#headerMessage iframe').contentDocument.querySelector('#tinymce').innerHTML = newText;
+                return Promise.resolve(tinyMCE.get('headerMessage$html').setContent(newText));
             }, newText);
 
-            // wait for the page to update before moving on to save the page
-            await page.waitFor(2000);
-
+            await page.waitForFunction((newText) => {
+                // grab the contents from the console.log and ensure they are the same
+                // console.log(document.querySelector('#headerMessage iframe').contentDocument.querySelector('#tinymce').innerHTML, newText)
+                return document.querySelector('#headerMessage iframe').contentDocument.querySelector('#tinymce').innerHTML === newText;
+            }, { polling: 250 }, newText);
+           
             // prep the page for navigation, then click the "Save and Close" button
             await Promise.all([
                 page.waitForNavigation(),

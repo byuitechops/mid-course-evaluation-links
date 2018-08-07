@@ -70,13 +70,11 @@ function runCourse(course) {
             error.getCourseTOC = err;
             console.error(err);
         });
-        console.log(tableOfContents);
         var topics = getTopics(tableOfContents);
 
         // check if there are more than one
         var found = topics.filter(topic => {
-            // console.log(topic.TypeIdentifier, /mid-?\s?course\s*eval(uation)?/gi.test(topic.Title));
-            return topic.TypeIdentifier === 'Link' && /mid-?\s?course\s*eval(uation)?/gi.test(topic.Title);
+            return topic.TypeIdentifier === 'Link' && (/mid\s*-?\s*course\s*eval(uation)?/gi.test(topic.Title) || /mid\s*-?\s*course\s*feedback?/gi.test(topic.Title));
         });
 
         // throw an error if there is more than one mid-course eval
@@ -103,6 +101,7 @@ function runCourse(course) {
  * Returns the TOC object
  *********************************************/
 function getCourseTOC(courseID) {
+    console.log(`Getting the course with ID: ${courseID}`);
     return new Promise((resolve, reject) => {
         var $ = window.top.jQuery;
 
