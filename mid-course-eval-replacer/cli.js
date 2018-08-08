@@ -6,6 +6,13 @@ function getInput() {
         // prompt for the filepath to read from, and their brightspace username and password
         var schema = {
             properties: {
+                verify: {
+                    type: 'string',
+                    pattern: /true|false/,
+                    message: `<true/false>`,
+                    required: true,
+                    default: 'false'
+                },
                 domain: {
                     type: 'string',
                     pattern: /pathway|byui/,
@@ -20,7 +27,6 @@ function getInput() {
                 },
                 username: {
                     type: 'string',
-                    pattern: /cct_\w*\W*/i,
                     message: `Type your Brightspace username`,
                     required: true,
                 },

@@ -71,10 +71,12 @@ function runCourse(course) {
             console.error(err);
         });
         var topics = getTopics(tableOfContents);
-
+        
         // check if there are more than one
         var found = topics.filter(topic => {
-            return topic.TypeIdentifier === 'Link' && (/mid\s*-?\s*course\s*eval(uation)?/gi.test(topic.Title) || /mid\s*-?\s*course\s*feedback?/gi.test(topic.Title));
+            if (topic.TypeIdentifier === 'Link' && (/mid\s*-?\s*course\s*eval(uation)?/gi.test(topic.Title) || /mid\s*-?\s*course\s*feedback/gi.test(topic.Title) || /mid-semester\s*instructor\s*feedback/gi.test(topic.Title))) {
+                return topic;
+            }
         });
 
         // throw an error if there is more than one mid-course eval
@@ -87,7 +89,7 @@ function runCourse(course) {
         resolve({
             'Course Name': course.name,
             'Course ID': course.id,
-            'Link to Evaluation': found.length > 0 ? `https://byui.brightspace.com${found[0].Url}` : '',
+            'Link to Evaluation': found.length > 0 ? `https://pathway.brightspace.com${found[0].Url}` : '',
             'Evaluation Found': found.length > 0 ? 'Found' : 'Not Found',
             'Errors': Object.keys(error).length > 0 ? JSON.stringify(error) : ''
         });
@@ -178,7 +180,7 @@ async function runAllCourses() {
         var csvData = d3.csvFormat(data, ["Course Name", "Course ID", "Link to Evaluation", "Evaluation Found", "Errors"]);
 
         /* Log the csv, and download it */
-        download(csvData, 'brightspaceReport.csv');
+        download(csvData, 'pathwayReport.csv');
     } catch (e) {
         console.error(e.stack);
     }
