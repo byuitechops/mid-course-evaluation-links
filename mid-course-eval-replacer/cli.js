@@ -11,7 +11,7 @@ function getInput() {
                     pattern: /true|false/,
                     message: `<true/false>`,
                     required: true,
-                    default: 'false'
+                    default: 'true'
                 },
                 domain: {
                     type: 'string',

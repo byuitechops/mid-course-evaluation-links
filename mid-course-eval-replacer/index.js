@@ -79,10 +79,11 @@ async function getCourseLinks(filepath, page, browser, verify) {
         }
     });
 
-    // put the courses whose evaluations weren't found
+    // put the courses whose evaluations weren't found into the log here
     coursesWithoutEvals.forEach(course => {
         logger.log(`Courses who's evaluations weren't found`, course);
     });
+    // either edit, or verify. One option, so you'll have to run it all twice
     if (verify === 'false') {
         editCourses(coursesWithEvals, page, browser);
     } else {

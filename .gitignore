@@ -1,4 +1,4 @@
 /mid-course-eval-replacer/node_modules
 /mid-course-eval-replacer/reports/json-reports/*
 /mid-course-eval-replacer/reports/html-reports/*
-.csv*
+*.csv

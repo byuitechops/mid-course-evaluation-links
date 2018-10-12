@@ -66,97 +66,62 @@ function getCourses() {
 function runCourse(course) {
     return new Promise(async (resolve, reject) => {
         var error = {};
-        var tableOfContents = await getCourseTOC(course.id).catch(err => {
-            error.getCourseTOC = err;
+        var quizzes = await getCourseQuizzes(course.id).catch(err => {
+            error.getCourseQuizzes = err;
             console.error(err);
         });
-        var topics = getTopics(tableOfContents);
-        
-        // check if there are more than one
-        var found = topics.filter(topic => {
-            if (topic.TypeIdentifier === 'Link' && /mid-semester\s*instructor\s*feedback/gi.test(topic.Title)) {
-                return topic;
+
+        var returnObjs = quizzes.map(quiz => {
+            return {
+                'Course Name': course.name,
+                'Course ID': course.id,
+                'Quiz Title': quiz.Name,
+                'Link to Quiz': `https://pathway.brightspace.com/d2l/lms/quizzing/admin/modify/quiz_newedit_properties.d2l?qi=${quiz.QuizId}&ou=${course.id}`,
+                'Quiz is Active': quiz.IsActive,
+                'Errors': Object.keys(error).length > 0 ? JSON.stringify(error) : ''
             }
         });
-
-        // throw an error if there is more than one mid-course eval
-        if (found.length > 1) {
-            error.numMatches = `This course has ${found.length} matchs for 'Mid-Semester Instructor Feedback'.`;
-            console.error(error.numMatches);
-        }
-
         /* Return the log info */
-        resolve({
-            'Course Name': course.name,
-            'Course ID': course.id,
-            'Link to Evaluation': found.length > 0 ? `https://byui.brightspace.com${found[0].Url}` : '',
-            'Evaluation Found': found.length > 0 ? 'Found' : 'Not Found',
-            'Errors': Object.keys(error).length > 0 ? JSON.stringify(error) : ''
-        });
+        resolve(returnObjs);
     });
 }
 
-/*********************************************
- * Get the modules and topics in the course
- * from the course's Table of Contents (TOC)
- * 
- * Returns the TOC object
- *********************************************/
-function getCourseTOC(courseID) {
-    console.log(`Getting the course with ID: ${courseID}`);
+function makeApiCall(url) {
     return new Promise((resolve, reject) => {
         var $ = window.top.jQuery;
-
         $.ajax({
             dataType: "json",
-            url: `/d2l/api/le/1.24/${courseID}/content/toc`,
+            url: url,
             success: resolve,
             method: 'GET',
             error: reject
         });
     });
 }
-
 /*********************************************
- * Iterate through the TOC and create a flat
- * array of all the topics in the course.
+ * Get the modules and topics in the course
+ * from the course's Table of Contents (TOC)
  * 
- * Returns the flattened object array of topics
+ * Returns the TOC object
  *********************************************/
-function getTopics(tableOfContents) {
-    var topics = [];
-
-    /********************************************************************************
-     * A recursive function that will iterate through the TOC tree and push 
-     * all the leaf nodes (Topics, not empty Modules) onto a 'topics' array
-     * 
-     * If there are submodules in a module, then this function will be called 
-     * recursively and take the current module's 'Modules' array as its parameters
-     * ******************************************************************************/
-    function recurseTOC(modules) {
-        /* If modules is empty or undefined, return */
-        if (!modules) {
-            return;
+function getCourseQuizzes(courseID) {
+    return new Promise(async (resolve, reject) => {
+        console.log(`Getting the courses quizzes with ID: ${courseID}`);
+        var $ = window.top.jQuery;
+        var url = `/d2l/api/le/1.28/${courseID}/quizzes/`;
+        var quizzes = [];
+        try {
+            do {
+                var returnedQuizzes = await makeApiCall(url);
+                url = returnedQuizzes.Next;
+                quizzes = quizzes.concat(returnedQuizzes.Objects);
+            } while (url)
+            console.log(quizzes);
+            resolve(quizzes);
+        } catch (e) {
+            reject(e);
         }
-
-        /* If there are submodules, push their topics onto the topics array and iterate through their modules recursively */
-        modules.forEach(mod => {
-            /* First add whatever topics are in the module */
-            if (mod.Topics && mod.Topics.length !== 0) {
-                topics.push(mod.Topics);
-            }
-            /* Then if there are submodules, recurse through them */
-            if (mod.Modules && mod.Modules.length !== 0) {
-                recurseTOC(mod.Modules);
-            }
-        });
-    }
-
-    /* Call the function once. If it has submodules, it will be called recursively */
-    recurseTOC(tableOfContents.Modules);
-
-    /* Return a flattened array of topics */
-    return topics.reduce((acc, currArray) => acc.concat(currArray), []);
+    });
 }
 
 /*******************************************************
@@ -173,18 +138,19 @@ async function runAllCourses() {
         /* Loop through and do the following for each course */
         for (var i = 0; i < courses.length; i++) {
             var logInfo = await runCourse(courses[i]);
-            data.push(logInfo);
+            data = data.concat(logInfo);
         }
 
         /* Format and create the CSV file with the log data */
-        var csvData = d3.csvFormat(data, ["Course Name", "Course ID", "Link to Evaluation", "Evaluation Found", "Errors"]);
+        var csvData = d3.csvFormat(data, ["Course Name", "Course ID", "Quiz Title", "Link to Quiz", "Quiz is Active", "Errors"]);
 
         /* Log the csv, and download it */
-        download(csvData, 'pathwayReport.csv');
+        download(csvData, 'd2lReferenceCourses.csv');
     } catch (e) {
         console.error(e.stack);
     }
 }
+
 
 /*********************************
  * Start Here ^
